@@ -1,6 +1,6 @@
-# Chinook
+# Databázové technológie Chinook-ETL
 
-Tento repozitár obsahuje implementáciu ETL procesu v Snowflake pre analýzu dát z AmazonBooks datasetu. Projekt sa zameriava na preskúmanie správania používateľov a ich čitateľských preferencií na základe hodnotení kníh a demografických údajov používateľov. Výsledný dátový model umožňuje multidimenzionálnu analýzu a vizualizáciu kľúčových metrik.
+Cieľom semestrálneho projektu je preskúmať dáta z databázy Chinook so zameraním na používateľov, ich preferencie a nákupy skladieb. Analýza poskytne prehľad o trendoch v záujmoch používateľov, najobľúbenejších položkách (ako sú skladby alebo albumy) a vzoroch správania zákazníkov.
 
 ---
 
@@ -34,13 +34,13 @@ Dáta sú usporiadané v relačnom modeli, ktorý je znázornený na **entitno-r
 
 ## 2 Dimenzionálny model
 
-Navrhnutý bol **hviezdicový model (star schema)**, pre efektívnu analýzu kde centrálny bod predstavuje faktová tabuľka **`fact_invoice`**, ktorá je prepojená s nasledujúcimi dimenziami:
+Bol navrhnutý **hviezdicový model (star schema)**, ktorý umožňuje efektívnu analýzu dát. Centrálna faktová tabuľka **`fact_invoice`** je prepojená s nasledujúcimi dimenzionálnymi tabuľkami:
 
-- **`dim_track`**: Zahŕna údaje o skladbách , albumoch , interpretoch a žánroch.
-- **`dim_customer`**: Obsahuje informácie o zákazníkoch, ktorí vykonali nákupy.
-- **`dim_employee`**: Obsahuje informácie o zamestnancoch, ktorí sa podieľali na transakciách.
-- **`dim_address`**: Táto tabuľka obsahuje informácie o geografických lokalitách.
-- **`dim_date`**: Táto tabuľka poskytuje podrobnosti o čase a dátumoch pre analýzu.
+- **`dim_track`**: Obsahuje informácie o skladbách, albumoch, interpretoch a žánroch.
+- **`dim_customer`**: Zahŕňa údaje o zákazníkoch, ktorí uskutočnili nákupy.
+- **`dim_employee`**: Obsahuje detaily o zamestnancoch zapojených do transakcií.
+- **`dim_address`**: Poskytuje údaje o geografických lokalitách.
+- **`dim_date`**: Zabezpečuje informácie o čase a dátumoch pre analytické účely.
 
 <img src="https://github.com/ppaprik/Chinook-ETL/blob/main/Chinook_SCD/Chinook_SCD.png" width="720"/>
 
@@ -165,7 +165,7 @@ Dashboard obsahuje 5 vizualizácií, ktoré zobrazuje rôzne aspekty predajov a 
 
 ### Graf 1: Predaje podľa žánru
 
-Tento graf zobrazuje počet predajov rozdelených podľa žánru. Použitý SQL dopyt sa zameriava na počet predajov pre každý žáner hudby v databáze.
+Tento graf znázorňuje počet predajov rozdelených podľa jednotlivých hudobných žánrov. SQL dopyt zohľadňuje počet predajov pre každý žáner, pričom spája údaje z faktovej tabuľky a dimenzie skladieb.
 
 ```sql
 SELECT t.genre, COUNT(*) AS Sales_Count
@@ -177,9 +177,9 @@ GROUP BY t.genre;
 
 ---
 
-### Graf 2: Cena distribúcie
+### Graf 2: Distribúcia cien
 
-Tento graf zobrazuje distribúciu cien podľa kategórií a množstva predaných položiek. Využíva sumu množstiev predaných za jednotlivé ceny a kategórie.
+Tento graf vizualizuje, ako sú ceny rozložené v rámci rôznych cenových kategórií a množstva predaných položiek. SQL dopyt sumarizuje predaje podľa jednotkovej ceny a cenovej kategórie.
 
 ```sql
 SELECT unit_price as Price, price_category, SUM(quantity) AS Quantity
@@ -190,24 +190,23 @@ GROUP BY unit_price, price_category;
 
 ---
 
-### Graf 3: Priemerná dĺžka hudby
+### Graf 3: Priemerná dĺžka skladieb
 
-Tento graf zobrazuje priemernú dĺžku skladieb podľa ich kategórie. Priemerné trvanie skladieb je vypočítané v minútach.
+Tento graf znázorňuje priemernú dĺžku skladieb, rozdelenú podľa ich kategórie. SQL dopyt vypočíta priemernú dĺžku skladieb v minútach, na základe ich trvania v milisekundách.
 
 ```sql
 SELECT dt.len, ROUND((AVG(dt.milliseconds) / 1000 / 60), 2) AS Lenght
 FROM fact_invoice fi
 JOIN dim_track dt ON fi.dim_track_id = dt.dim_track_id
 GROUP BY dt.len;
-
 ```
 <img src="https://github.com/ppaprik/Chinook-ETL/blob/main/graphs/AverageLenghtOfSong.png" width="512"/>
 
 ---
 
-### Graf 4: Predaje za všetky mesiace
+### Graf 4: Predaje podľa mesiacov
 
-Tento graf zobrazuje počet predajov za každý mesiac v roku. Dopyt sumarizuje počet predajov podľa mesiacov, zoradených podľa dátumu.
+Tento graf poskytuje prehľad o počte predajov počas jednotlivých mesiacov v roku. SQL dopyt sumarizuje predaje podľa mesiaca a usporadúva výsledky chronologicky.
 
 ```sql
 SELECT dd.month_as_string AS month, COUNT(fi.fact_invoice_id) AS sales_count, dd.months AS Mesiac
@@ -220,9 +219,9 @@ ORDER BY dd.months ASC;
 
 ---
 
-### Graf 5: Predaje za celý rok
+### Graf 5: Predaje podľa rokov
 
-Tento graf ukazuje celkový počet predajov za každý rok. Je to agregovaný pohľad na ročné predaje v rámci celej databázy.
+Tento graf zobrazuje celkový počet predajov za každý rok. Poskytuje sumárny pohľad na ročné predaje v databáze a umožňuje sledovať medziročné trendy.
 
 ```sql
 SELECT dd.years, COUNT(*) AS Sales_Count
